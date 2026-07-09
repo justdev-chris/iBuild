@@ -8,6 +8,27 @@
     <link rel="stylesheet" href="src/css/style.css" />
 </head>
 <body>
+
+    <!-- ─── GLOBAL TOAST (defined FIRST) ────────────────────── -->
+    <script>
+        function showToast(msg, isWarning = false) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+
+            const el = document.createElement('div');
+            el.className = `toast${isWarning ? ' warning' : ''}`;
+            el.textContent = msg;
+            document.body.appendChild(el);
+
+            setTimeout(() => {
+                el.classList.add('hidden');
+                setTimeout(() => el.remove(), 300);
+            }, 3000);
+        }
+        window.showToast = showToast;
+        console.log('✅ Toast global defined');
+    </script>
+
     <!-- ─── HEADER ─────────────────────────────────────────────── -->
     <header>
         <div class="logo-area">
@@ -23,21 +44,17 @@
 
     <!-- ─── MAIN ────────────────────────────────────────────────── -->
     <main>
-        <!-- Login prompt (shown when not logged in) -->
         <section id="loginPrompt" class="login-prompt">
             <h2>Build iOS apps. No Mac required.</h2>
             <p>Sign in with GitHub to manage your iBuild projects.</p>
             <button id="loginBtnMain" class="btn-primary btn-large">Login with GitHub</button>
         </section>
 
-        <!-- Dashboard (shown when logged in) -->
         <section id="dashboard" style="display:none;">
             <div class="dashboard-header">
                 <h2>Your Projects</h2>
                 <button id="newProjectBtn" class="btn-primary">+ New Project</button>
             </div>
-
-            <!-- Project list -->
             <div id="projectList" class="project-list">
                 <p class="loading-text">Loading projects...</p>
             </div>
@@ -77,7 +94,7 @@
         <p>🐱 iBuild Web &bull; Built by <a href="https://catsdevs.online" target="_blank">justdev-chris</a></p>
     </footer>
 
-    <!-- ─── VCONSOLE (Mobile debug) ────────────────────────────── -->
+    <!-- ─── VCONSOLE ────────────────────────────────────────────── -->
     <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
     <script>
         const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
@@ -92,5 +109,6 @@
     <script src="src/js/github.js"></script>
     <script src="src/js/projects.js"></script>
     <script src="src/js/app.js"></script>
+
 </body>
 </html>
