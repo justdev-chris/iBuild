@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>iBld · iBuild Web</title>
-    <link rel="icon" href="assets/icons/ibld-logo.png" type="image/png" />
+    <title>iBuild Web</title>
+    <link rel="icon" href="assets/icons/ibld-logo.PNG" type="image/png" />
     <link rel="stylesheet" href="src/css/style.css" />
 </head>
 <body>
     <!-- ─── HEADER ─────────────────────────────────────────────── -->
     <header>
         <div class="logo-area">
-            <img src="assets/icons/ibld-logo.PNG" alt="iBld Logo" class="logo-icon" />
+            <img src="assets/icons/ibld-logo.PNG" alt="iBuild Logo" class="logo-icon" />
             <span class="logo-text">iBuild <span class="light">Web</span></span>
         </div>
         <div class="header-actions">
@@ -76,6 +76,17 @@
     <footer>
         <p>🐱 iBuild Web &bull; Built by <a href="https://catsdevs.online" target="_blank">justdev-chris</a></p>
     </footer>
+
+    <!-- ─── VCONSOLE (Mobile debug) ────────────────────────────── -->
+    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+    <script>
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
+        const hasDebugParam = new URLSearchParams(window.location.search).has('debug');
+        if (isMobile || hasDebugParam) {
+            const vConsole = new VConsole();
+            console.log('🐱 iBuild Web — vConsole enabled');
+        }
+    </script>
 
     <!-- ─── SCRIPTS ────────────────────────────────────────────── -->
     <script src="src/js/github.js"></script>
