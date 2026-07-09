@@ -7,46 +7,103 @@
     <link rel="icon" href="assets/icons/ibld-logo.png" type="image/png" />
     <link rel="stylesheet" href="src/css/style.css" />
     <style>
-        /* ─── EDITOR LAYOUT ─────────────────────────────── */
-        .editor-container {
+        .editor-layout {
+            display: flex;
+            gap: 16px;
+            flex: 1;
+            min-height: 0;
+        }
+        .file-tree {
+            width: 260px;
+            min-width: 200px;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            padding: 12px;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 80px);
-            padding: 16px 24px;
-            gap: 12px;
+            gap: 8px;
         }
-
-        .editor-toolbar {
+        .file-tree-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .editor-toolbar .left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .editor-toolbar .project-title {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .editor-toolbar .project-title .repo {
             color: #888;
-            font-weight: 400;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2a2a2a;
         }
-
-        .editor-toolbar .actions {
+        .file-tree-header button {
+            background: none;
+            border: none;
+            color: #00ccff;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+            padding: 0 4px;
+        }
+        .file-tree-header button:hover {
+            color: #fff;
+        }
+        .file-tree ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+        .file-tree li {
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #aaa;
             display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.1s;
         }
-
+        .file-tree li:hover {
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .file-tree li.active {
+            background: #1a2a2a;
+            color: #00ccff;
+        }
+        .file-tree li .file-actions {
+            display: none;
+            gap: 6px;
+        }
+        .file-tree li:hover .file-actions {
+            display: flex;
+        }
+        .file-tree li .file-actions button {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 0 4px;
+        }
+        .file-tree li .file-actions button:hover {
+            color: #ff4444;
+        }
+        .file-tree li .file-actions button.rename:hover {
+            color: #ffcc00;
+        }
+        .file-tree .file-icon {
+            margin-right: 8px;
+        }
+        .editor-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 0;
+        }
         #editor-container {
             flex: 1;
             min-height: 400px;
@@ -55,7 +112,33 @@
             overflow: hidden;
             background: #1a1a1a;
         }
-
+        .editor-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .editor-toolbar .left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .editor-toolbar .project-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .editor-toolbar .project-title .repo {
+            color: #888;
+            font-weight: 400;
+            font-size: 14px;
+        }
+        .editor-toolbar .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
         .status-bar {
             display: flex;
             justify-content: space-between;
@@ -68,35 +151,42 @@
             flex-wrap: wrap;
             gap: 6px;
         }
-
-        .status-bar .saved {
-            color: #00ccff;
+        .status-bar .saved { color: #00ccff; }
+        .status-bar .unsaved { color: #ffcc00; }
+        .modal-small .modal-content { max-width: 400px; }
+        .modal-small input {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0d0d0d;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            margin: 8px 0 16px;
         }
-        .status-bar .unsaved {
-            color: #ffcc00;
+        .modal-small input:focus { border-color: #00ccff; }
+        .modal-small .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
         }
-
-        /* ─── RESPONSIVE ──────────────────────────────────── */
-        @media (max-width: 700px) {
-            .editor-container {
-                height: calc(100vh - 120px);
-                padding: 12px;
-            }
-            .editor-toolbar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .editor-toolbar .left {
-                flex-wrap: wrap;
-            }
-            .editor-toolbar .actions {
-                justify-content: flex-start;
+        .file-tree-header .header-buttons {
+            display: flex;
+            gap: 4px;
+        }
+        #fileUploadInput { display: none; }
+        @media (max-width: 800px) {
+            .editor-layout { flex-direction: column; }
+            .file-tree {
+                width: 100%;
+                min-width: unset;
+                max-height: 200px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- ─── HEADER ─────────────────────────────────────────────── -->
     <header>
         <div class="logo-area">
             <img src="assets/icons/ibld-logo.png" alt="iBld Logo" class="logo-icon" />
@@ -109,8 +199,7 @@
         </div>
     </header>
 
-    <!-- ─── EDITOR ────────────────────────────────────────────────── -->
-    <div class="editor-container">
+    <div class="editor-container" style="display:flex;flex-direction:column;height:calc(100vh - 80px);padding:16px 24px;gap:12px;">
         <div class="editor-toolbar">
             <div class="left">
                 <span class="project-title">
@@ -126,211 +215,72 @@
             </div>
         </div>
 
-        <div id="editor-container"></div>
+        <div class="editor-layout">
+            <div class="file-tree">
+                <div class="file-tree-header">
+                    <span>📁 Files</span>
+                    <div class="header-buttons">
+                        <button id="newFolderBtn" title="New Folder">📁+</button>
+                        <button id="uploadBtn" title="Upload File">📤</button>
+                        <button id="newFileBtn" title="New File">+</button>
+                    </div>
+                </div>
+                <ul id="fileList"><li style="color:#555;text-align:center;padding:20px;">Loading...</li></ul>
+                <input type="file" id="fileUploadInput" multiple />
+            </div>
 
-        <div class="status-bar">
-            <span id="statusLeft">📄 main.swift</span>
-            <span id="statusRight">🐱 iBuild Web</span>
+            <div class="editor-main">
+                <div id="editor-container"></div>
+                <div class="status-bar">
+                    <span id="statusLeft">📄 <span id="currentFileName">main.swift</span></span>
+                    <span id="statusRight">🐱 iBuild Web</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- ─── SCRIPTS ────────────────────────────────────────────────── -->
+    <!-- Modals -->
+    <div id="newFileModal" class="modal modal-small" style="display:none;">
+        <div class="modal-content">
+            <h3>📄 New File</h3>
+            <label for="newFileName">File path</label>
+            <input type="text" id="newFileName" placeholder="Sources/NewFile.swift" />
+            <div class="modal-actions">
+                <button id="newFileCancel" class="btn-secondary">Cancel</button>
+                <button id="newFileConfirm" class="btn-primary">Create</button>
+            </div>
+            <div id="newFileStatus" style="margin-top:10px;color:#888;font-size:13px;"></div>
+        </div>
+    </div>
+
+    <div id="newFolderModal" class="modal modal-small" style="display:none;">
+        <div class="modal-content">
+            <h3>📁 New Folder</h3>
+            <label for="newFolderName">Folder path</label>
+            <input type="text" id="newFolderName" placeholder="Sources/NewFolder" />
+            <div class="modal-actions">
+                <button id="newFolderCancel" class="btn-secondary">Cancel</button>
+                <button id="newFolderConfirm" class="btn-primary">Create</button>
+            </div>
+            <div id="newFolderStatus" style="margin-top:10px;color:#888;font-size:13px;"></div>
+        </div>
+    </div>
+
+    <div id="renameModal" class="modal modal-small" style="display:none;">
+        <div class="modal-content">
+            <h3>✏️ Rename File</h3>
+            <label for="renameFileName">New path</label>
+            <input type="text" id="renameFileName" placeholder="Sources/NewName.swift" />
+            <div class="modal-actions">
+                <button id="renameCancel" class="btn-secondary">Cancel</button>
+                <button id="renameConfirm" class="btn-primary">Rename</button>
+            </div>
+            <div id="renameStatus" style="margin-top:10px;color:#888;font-size:13px;"></div>
+        </div>
+    </div>
+
     <script src="src/js/monaco-loader.js"></script>
     <script src="src/js/build.js"></script>
-    <script>
-        // ─── CONFIG ──────────────────────────────────────────────
-        const REPO = new URLSearchParams(window.location.search).get('repo');
-        if (!REPO) {
-            document.body.innerHTML = '<div style="text-align:center;padding:80px;color:#888;"><h2>No project selected</h2><p><a href="index.html">← Back to Dashboard</a></p></div>';
-            throw new Error('No repo specified');
-        }
-
-        document.getElementById('repoName').textContent = REPO;
-        document.getElementById('projectName').textContent = REPO.replace('ibuild-', '');
-
-        // ─── STATE ──────────────────────────────────────────────
-        let editor = null;
-        let currentContent = '';
-        let isDirty = false;
-        let currentToken = null;
-        let currentOwner = null;
-
-        // ─── INIT ──────────────────────────────────────────────────
-        async function init() {
-            const token = localStorage.getItem('github_token');
-            if (!token) {
-                document.body.innerHTML = '<div style="text-align:center;padding:80px;color:#888;"><h2>Not logged in</h2><p><a href="index.html">← Back to Dashboard</a></p></div>';
-                return;
-            }
-            currentToken = token;
-
-            try {
-                const user = await getUserInfo(token);
-                currentOwner = user.login;
-                document.getElementById('userDisplay').textContent = '🐱 ' + user.login;
-
-                await loadFile();
-                await initEditor();
-
-            } catch (err) {
-                console.error('Init error:', err);
-                document.getElementById('editor-container').innerHTML = '<div style="padding:40px;text-align:center;color:#888;">❌ Failed to load: ' + err.message + '</div>';
-            }
-        }
-
-        // ─── GET USER INFO ──────────────────────────────────────
-        async function getUserInfo(token) {
-            const res = await fetch('https://api.github.com/user', {
-                headers: { 'Authorization': `token ${token}` }
-            });
-            if (!res.ok) throw new Error('Failed to get user info');
-            return res.json();
-        }
-
-        // ─── LOAD FILE ──────────────────────────────────────────
-        async function loadFile() {
-            const path = 'Sources/main.swift';
-            try {
-                const res = await fetch(`https://api.github.com/repos/${currentOwner}/${REPO}/contents/${path}`, {
-                    headers: { 'Authorization': `token ${currentToken}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    currentContent = atob(data.content.replace(/\n/g, ''));
-                } else if (res.status === 404) {
-                    currentContent = '// No main.swift found\n';
-                } else {
-                    throw new Error('Failed to fetch file');
-                }
-            } catch (err) {
-                console.error('Load file error:', err);
-                currentContent = '// Error loading file\n';
-            }
-        }
-
-        // ─── INIT EDITOR ──────────────────────────────────────────
-        async function initEditor() {
-            try {
-                await MonacoLoader.load();
-
-                editor = MonacoLoader.createEditor('editor-container', {
-                    value: currentContent,
-                });
-
-                // Detect changes
-                editor.onDidChangeModelContent(() => {
-                    isDirty = true;
-                    document.getElementById('saveStatus').textContent = '⚠️ Unsaved';
-                    document.getElementById('saveStatus').className = 'unsaved';
-                });
-
-                // Ctrl+S to save
-                editor.addCommand(window.monaco.KeyMod.CtrlCmd | window.monaco.KeyCode.KeyS, () => {
-                    saveFile();
-                });
-
-                // ─── EVENT BINDINGS ──────────────────────────────
-                document.getElementById('saveBtn').addEventListener('click', saveFile);
-
-                document.getElementById('buildBtn').addEventListener('click', () => {
-                    if (typeof window._buildProject === 'function') {
-                        window._buildProject(REPO);
-                    } else {
-                        showToast('⚠️ Build function not loaded', true);
-                    }
-                });
-
-                document.getElementById('downloadBtn').addEventListener('click', () => {
-                    if (typeof window._downloadIPA === 'function') {
-                        window._downloadIPA(REPO);
-                    } else {
-                        showToast('⚠️ Download function not loaded', true);
-                    }
-                });
-
-                document.getElementById('backBtn').addEventListener('click', () => {
-                    if (isDirty && !confirm('You have unsaved changes. Go back anyway?')) return;
-                    window.location.href = 'index.html';
-                });
-
-                document.getElementById('logoutBtn').addEventListener('click', () => {
-                    localStorage.removeItem('github_token');
-                    window.location.href = 'index.html';
-                });
-
-            } catch (err) {
-                console.error('Editor init error:', err);
-                document.getElementById('editor-container').innerHTML = '<div style="padding:40px;text-align:center;color:#888;">❌ Failed to load editor: ' + err.message + '</div>';
-            }
-        }
-
-        // ─── SAVE FILE ──────────────────────────────────────────
-        async function saveFile() {
-            if (!editor) return;
-            const content = editor.getValue();
-            const path = 'Sources/main.swift';
-
-            try {
-                // Get current file SHA (for update)
-                let sha = '';
-                const checkRes = await fetch(`https://api.github.com/repos/${currentOwner}/${REPO}/contents/${path}`, {
-                    headers: { 'Authorization': `token ${currentToken}` }
-                });
-                if (checkRes.ok) {
-                    const data = await checkRes.json();
-                    sha = data.sha;
-                }
-
-                const encoded = btoa(unescape(encodeURIComponent(content)));
-
-                const res = await fetch(`https://api.github.com/repos/${currentOwner}/${REPO}/contents/${path}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${currentToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: 'Update main.swift from iBuild Web',
-                        content: encoded,
-                        sha: sha || undefined,
-                        branch: 'main',
-                    }),
-                });
-
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.message || 'Save failed');
-                }
-
-                isDirty = false;
-                document.getElementById('saveStatus').textContent = '✅ Saved';
-                document.getElementById('saveStatus').className = 'saved';
-                showToast('💾 Saved successfully!');
-
-            } catch (err) {
-                console.error('Save error:', err);
-                showToast('❌ Save failed: ' + err.message, true);
-            }
-        }
-
-        // ─── TOAST ──────────────────────────────────────────────────
-        function showToast(msg, isWarning = false) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-
-            const el = document.createElement('div');
-            el.className = `toast${isWarning ? ' warning' : ''}`;
-            el.textContent = msg;
-            document.body.appendChild(el);
-
-            setTimeout(() => {
-                el.classList.add('hidden');
-                setTimeout(() => el.remove(), 300);
-            }, 3000);
-        }
-
-        // ─── START ──────────────────────────────────────────────────
-        init();
-    </script>
+    <script src="src/js/editor.js"></script>
 </body>
 </html>
