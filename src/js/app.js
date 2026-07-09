@@ -5,22 +5,6 @@
 let currentUser = null;
 let currentToken = null;
 
-// ─── TOAST (DEFINED FIRST) ──────────────────────────────────
-function showToast(msg, isWarning = false) {
-    const existing = document.querySelector('.toast');
-    if (existing) existing.remove();
-
-    const el = document.createElement('div');
-    el.className = `toast${isWarning ? ' warning' : ''}`;
-    el.textContent = msg;
-    document.body.appendChild(el);
-
-    setTimeout(() => {
-        el.classList.add('hidden');
-        setTimeout(() => el.remove(), 300);
-    }, 3000);
-}
-
 // ─── UI HELPERS ──────────────────────────────────────────────────
 function showDashboard(user) {
     const loginPrompt = document.getElementById('loginPrompt');
@@ -158,7 +142,6 @@ async function loadUserInfo() {
 }
 
 // ─── EXPOSE FUNCTIONS GLOBALLY ──────────────────────────────
-window.showToast = showToast;
 window.showDashboard = showDashboard;
 window.showLoginPrompt = showLoginPrompt;
 window.loadUserInfo = loadUserInfo;
@@ -175,7 +158,6 @@ window.currentUser = currentUser;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🐱 iBuild Web — App initializing');
 
-    // Check if already logged in
     const token = localStorage.getItem('github_token');
     if (token) {
         loadUserInfo();
@@ -197,7 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
     if (cancelBtn) cancelBtn.addEventListener('click', cancelDeviceFlow);
 
-    // Close device flow modal on background click
     const deviceModal = document.getElementById('deviceFlowModal');
     if (deviceModal) {
         deviceModal.addEventListener('click', function(e) {
@@ -207,7 +188,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // New Project
     if (newProjectBtn) {
         newProjectBtn.addEventListener('click', function() {
             const modal = document.getElementById('newProjectModal');
