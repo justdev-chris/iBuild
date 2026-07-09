@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iBld · Editor</title>
+    <link rel="icon" href="assets/icons/ibld-logo.png" type="image/png" />
+    <link rel="stylesheet" href="src/css/style.css" />
+    <style>
+        /* ─── EDITOR LAYOUT ─────────────────────────────── */
+        .editor-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 80px);
+            padding: 16px 24px;
+            gap: 12px;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .editor-toolbar .left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .editor-toolbar .project-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .editor-toolbar .project-title .repo {
+            color: #888;
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        .editor-toolbar .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        #editor {
+            flex: 1;
+            min-height: 400px;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #111;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
+            color: #666;
+            font-size: 13px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .status-bar .saved {
+            color: #00ccff;
+        }
+        .status-bar .unsaved {
+            color: #ffcc00;
+        }
+
+        /* ─── RESPONSIVE ──────────────────────────────────── */
+        @media (max-width: 700px) {
+            .editor-container {
+                height: calc(100vh - 120px);
+                padding: 12px;
+            }
+            .editor-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .editor-toolbar .left {
+                flex-wrap: wrap;
+            }
+            .editor-toolbar .actions {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ─── HEADER ─────────────────────────────────────────────── -->
+    <header>
+        <div class="logo-area">
+            <img src="assets/icons/ibld-logo.png" alt="iBld Logo" class="logo-icon" />
+            <span class="logo-text">iBuild <span class="light">Web</span></span>
+        </div>
+        <div class="header-actions">
+            <span id="userDisplay" class="user-badge"></span>
+            <button id="backBtn" class="btn-secondary">← Dashboard</button>
+            <button id="logoutBtn" class="btn-secondary">Logout</button>
+        </div>
+    </header>
+
+    <!-- ─── EDITOR ────────────────────────────────────────────────── -->
+    <div class="editor-container">
+        <div class="editor-toolbar">
+            <div class="left">
+                <span class="project-title">
+                    <span id="projectName">Project</span>
+                    <span class="repo" id="repoName">repo</span>
+                </span>
+                <span id="saveStatus" class="saved">✅ Saved</span>
+            </div>
+            <div class="actions">
+                <button id="saveBtn" class="btn-primary">💾 Save</button>
+                <button id="buildBtn" class="btn-secondary">🔨 Build</button>
+                <button id="downloadBtn" class="btn-secondary">📦 IPA</button>
+            </div>
+        </div>
+
+        <div id="editor"></div>
+
+        <div class="status-bar">
+            <span id="statusLeft">📄 main.swift</span>
+            <span id="statusRight">🐱 iBuild Web</span>
+        </div>
+    </div>
+
+    <!-- ─── LOAD MONACO ────────────────────────────────────────── -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs/editor/editor.main.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs/loader.js"></script>
+
+    <script>
+        // ─── CONFIG ──────────────────────────────────────────────
+        const REPO = new URLSearchParams(window.location.search).get('repo');
+        if (!REPO) {
+            document.body.innerHTML = '<div style="text-align:center;padding:80px;color:#888;"><h2>No project selected</h2><p><a href="index.html">← Back to Dashboard</a></p></div>';
+            throw new Error('No repo specified');
+        }
+
+        document.getElementById('repoName').textContent = REPO;
+
+        // ─── STATE ──────────────────────────────────────────────
+        let editor = null;
+        let currentContent = '';
+        let isDirty = false;
+        let saveTimeout = null;
+
+        // ─── LOAD MONACO ────────────────────────────────────────
+        require.config({
+            paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs' }
+        });
+
+        require(['vs/editor/editor.main'], function() {
+            initEditor();
+        });
+
+        async function initEditor() {
+            // Get token
+            const token = localStorage.getItem('github_token');
+            if (!token) {
+                document.body.innerHTML = '<div style="text-align:center;padding:80px;color:#888;"><h2>Not logged in</h2><p><a href="index.html">← Back to Dashboard</a></p></div>';
+                return;
+            }
+
+            // Fetch file content
+            const owner = (await getUserInfo(token)).login;
+            const path = 'Sources/main.swift';
+
+            let content = '';
+            try {
+                const res = await fetch(`https://api.github.com/repos/${owner}/${REPO}/contents/${path}`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    content = atob(data.content.replace(/\n/g, ''));
+                } else {
+                    content = '// No main.swift found\n';
+                }
+            } catch {
+                content = '// Error loading file\n';
+            }
+
+            currentContent = content;
+
+            // Create editor
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: content,
+                language: 'swift',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: true },
+                fontSize: 14,
+                tabSize: 4,
+                insertSpaces: true,
+            });
+
+            // Detect changes
+            editor.onDidChangeModelContent(() => {
+                isDirty = true;
+                document.getElementById('saveStatus').textContent = '⚠️ Unsaved';
+                document.getElementById('saveStatus').className = 'unsaved';
+            });
+
+            // Save on Ctrl+S
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+                saveFile();
+            });
+
+            document.getElementById('projectName').textContent = REPO.replace('ibuild-', '');
+            document.getElementById('saveBtn').addEventListener('click', saveFile);
+            document.getElementById('buildBtn').addEventListener('click', () => {
+                if (typeof buildProject === 'function') {
+                    buildProject(REPO);
+                } else {
+                    alert('Build function not loaded');
+                }
+            });
+            document.getElementById('downloadBtn').addEventListener('click', () => {
+                if (typeof downloadIPA === 'function') {
+                    downloadIPA(REPO);
+                } else {
+                    alert('Download function not loaded');
+                }
+            });
+            document.getElementById('backBtn').addEventListener('click', () => {
+                if (isDirty && !confirm('You have unsaved changes. Go back anyway?')) return;
+                window.location.href = 'index.html';
+            });
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                if (typeof logout === 'function') logout();
+                else {
+                    localStorage.removeItem('github_token');
+                    window.location.href = 'index.html';
+                }
+            });
+
+            // Load user display
+            const user = await getUserInfo(token);
+            document.getElementById('userDisplay').textContent = '🐱 ' + user.login;
+        }
+
+        // ─── SAVE ──────────────────────────────────────────────────
+        async function saveFile() {
+            if (!editor) return;
+            const content = editor.getValue();
+            const token = localStorage.getItem('github_token');
+            if (!token) {
+                alert('Not logged in');
+                return;
+            }
+
+            const owner = (await getUserInfo(token)).login;
+            const path = 'Sources/main.swift';
+
+            try {
+                // Get current file SHA (for update)
+                let sha = '';
+                const checkRes = await fetch(`https://api.github.com/repos/${owner}/${REPO}/contents/${path}`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                if (checkRes.ok) {
+                    const data = await checkRes.json();
+                    sha = data.sha;
+                }
+
+                const encoded = btoa(unescape(encodeURIComponent(content)));
+
+                const res = await fetch(`https://api.github.com/repos/${owner}/${REPO}/contents/${path}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Update main.swift from iBuild Web',
+                        content: encoded,
+                        sha: sha || undefined,
+                        branch: 'main',
+                    }),
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Save failed');
+                }
+
+                isDirty = false;
+                document.getElementById('saveStatus').textContent = '✅ Saved';
+                document.getElementById('saveStatus').className = 'saved';
+                showToast('💾 Saved successfully!');
+
+            } catch (err) {
+                console.error('Save error:', err);
+                showToast('❌ Save failed: ' + err.message, true);
+            }
+        }
+
+        // ─── HELPERS ──────────────────────────────────────────────
+        async function getUserInfo(token) {
+            const res = await fetch('https://api.github.com/user', {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to get user info');
+            return res.json();
+        }
+
+        function showToast(msg, isWarning = false) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            const el = document.createElement('div');
+            el.className = `toast${isWarning ? ' warning' : ''}`;
+            el.textContent = msg;
+            document.body.appendChild(el);
+            setTimeout(() => {
+                el.classList.add('hidden');
+                setTimeout(() => el.remove(), 300);
+            }, 3000);
+        }
+
+        // ─── EXPOSE ──────────────────────────────────────────────
+        window.buildProject = function(repo) {
+            // Will be implemented in build.js
+            if (typeof window._buildProject === 'function') {
+                window._buildProject(repo);
+            } else {
+                showToast('⚠️ Build function not loaded yet', true);
+                alert('Build function not loaded. Make sure build.js is included.');
+            }
+        };
+
+        window.downloadIPA = function(repo) {
+            if (typeof window._downloadIPA === 'function') {
+                window._downloadIPA(repo);
+            } else {
+                showToast('⚠️ Download function not loaded yet', true);
+                alert('Download function not loaded. Make sure build.js is included.');
+            }
+        };
+    </script>
+
+    <!-- ─── LOAD BUILD MODULE ──────────────────────────────────── -->
+    <script src="src/js/build.js"></script>
+</body>
+</html>
