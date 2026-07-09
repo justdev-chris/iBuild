@@ -2,42 +2,55 @@
 // Loads Monaco editor from CDN and configures Swift support.
 
 (function() {
-    // ─── LOAD MONACO ──────────────────────────────────────────
+    const CDNS = [
+        'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs/loader.js',
+        'https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs/loader.js',
+        'https://unpkg.com/monaco-editor@0.39.0/min/vs/loader.js'
+    ];
+
     function loadMonaco() {
         return new Promise((resolve, reject) => {
-            // Check if already loaded
             if (window.monaco) {
                 resolve(window.monaco);
                 return;
             }
 
-            // Load from CDN
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs/loader.js';
-            script.onload = () => {
-                require.config({
-                    paths: {
-                        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.39.0/min/vs'
-                    }
-                });
+            let attempts = 0;
+            const maxAttempts = CDNS.length;
 
-                require(['vs/editor/editor.main'], function() {
-                    resolve(window.monaco);
-                });
-            };
-            script.onerror = () => reject(new Error('Failed to load Monaco'));
-            document.head.appendChild(script);
+            function tryLoad() {
+                if (attempts >= maxAttempts) {
+                    reject(new Error('All CDN attempts failed'));
+                    return;
+                }
+                const url = CDNS[attempts];
+                attempts++;
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = () => {
+                    const baseUrl = url.replace('loader.js', '');
+                    require.config({
+                        paths: { vs: baseUrl }
+                    });
+                    require(['vs/editor/editor.main'], function() {
+                        resolve(window.monaco);
+                    });
+                };
+                script.onerror = () => {
+                    console.warn('CDN failed:', url);
+                    tryLoad();
+                };
+                document.head.appendChild(script);
+            }
+
+            tryLoad();
         });
     }
 
     // ─── CONFIGURE SWIFT ──────────────────────────────────────
     function configureSwift() {
         if (!window.monaco) return;
-
-        // Register Swift as a language
         window.monaco.languages.register({ id: 'swift' });
-
-        // Add basic syntax highlighting (simplified)
         window.monaco.languages.setMonarchTokensProvider('swift', {
             keywords: [
                 'import', 'class', 'struct', 'func', 'var', 'let', 'if', 'else',
@@ -70,8 +83,6 @@
                 ],
             },
         });
-
-        // Set default theme
         window.monaco.editor.defineTheme('dark', {
             base: 'vs-dark',
             inherit: true,
@@ -87,29 +98,24 @@
         });
     }
 
-    // ─── CREATE EDITOR ──────────────────────────────────────────
     function createEditor(container, options = {}) {
         if (!window.monaco) {
             throw new Error('Monaco not loaded');
         }
-
         configureSwift();
-
         return window.monaco.editor.create(document.getElementById(container), {
             value: options.value || '',
             language: 'swift',
-            theme: options.theme || 'dark',
+            theme: 'dark',
             automaticLayout: true,
-            minimap: { enabled: options.minimap !== false },
-            fontSize: options.fontSize || 14,
-            tabSize: options.tabSize || 4,
+            minimap: { enabled: true },
+            fontSize: 14,
+            tabSize: 4,
             insertSpaces: true,
-            readOnly: options.readOnly || false,
             ...options,
         });
     }
 
-    // ─── EXPOSE ──────────────────────────────────────────────────
     window.MonacoLoader = {
         load: loadMonaco,
         createEditor: createEditor,
