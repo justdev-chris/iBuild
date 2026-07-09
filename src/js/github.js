@@ -2,7 +2,7 @@
 // GitHub Device Flow OAuth — Full debugging
 
 // ─── CONFIG ──────────────────────────────────────────────────────
-const GITHUB_CLIENT_ID = 'Ov23liRwgQO7k9ys1ued'; // ⚠️ REPLACE THIS IF FORKING
+const GITHUB_CLIENT_ID = 'Ov23liRwgQO7k9ys1ued';
 
 // ─── STATE ──────────────────────────────────────────────────────
 let githubToken = null;
@@ -97,9 +97,9 @@ function pollForToken(deviceCode, interval) {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: JSON.stringify({
+                body: new URLSearchParams({
                     client_id: GITHUB_CLIENT_ID,
                     device_code: deviceCode,
                     grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
