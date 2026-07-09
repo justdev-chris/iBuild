@@ -77,15 +77,25 @@
         </div>
     </div>
 
-    <!-- ─── DEVICE FLOW MODAL ──────────────────────────────────── -->
-    <div id="deviceFlowModal" class="modal" style="display:none;">
-        <div class="modal-content device-flow">
-            <h3>🔐 GitHub Login</h3>
-            <p>1. Visit <strong id="verificationUri">github.com/login/device</strong></p>
-            <p>2. Enter this code: <strong id="userCode">----</strong></p>
-            <p>3. Authorize iBuild Web</p>
-            <div id="deviceStatus">Waiting for authorization...</div>
-            <button id="cancelDeviceFlow" class="btn-secondary">Cancel</button>
+    <!-- ─── PAT LOGIN MODAL ──────────────────────────────────────── -->
+    <div id="patModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" id="patModalClose">&times;</span>
+            <h3>🔑 Enter GitHub Token</h3>
+            <p style="color:#888;font-size:14px;margin-bottom:12px;">
+                Generate a token with <strong>repo</strong> and <strong>workflow</strong> scopes.
+                <br />
+                <a href="https://github.com/settings/tokens/new" target="_blank" style="color:#00ccff;">
+                    → Generate token on GitHub
+                </a>
+            </p>
+            <label for="patInput">Personal Access Token</label>
+            <input type="password" id="patInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
+            <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end;">
+                <button id="patCancel" class="btn-secondary">Cancel</button>
+                <button id="patConfirm" class="btn-primary">Login</button>
+            </div>
+            <div id="patStatus" style="margin-top:12px;color:#888;font-size:13px;"></div>
         </div>
     </div>
 
@@ -106,9 +116,9 @@
     </script>
 
     <!-- ─── SCRIPTS ────────────────────────────────────────────── -->
-<script src="src/js/github.js" defer></script>
-<script src="src/js/projects.js" defer></script>
-<script src="src/js/app.js" defer></script>
+    <script src="src/js/github.js"></script>
+    <script src="src/js/projects.js"></script>
+    <script src="src/js/app.js"></script>
 
 </body>
 </html>
