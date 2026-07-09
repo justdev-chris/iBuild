@@ -1,8 +1,8 @@
-// ─── PROJECTS ──────────────────────────────────────────────────
+// ─── PROJECTS.JS ──────────────────────────────────────────────────
 // Depends on: github.js (githubFetch, getGitHubToken, showToast)
 
-const TEMPLATE_OWNER = 'justdev-chris';     // Your GitHub username
-const TEMPLATE_REPO = 'iBuild-Template';    // The template repo name
+const TEMPLATE_OWNER = 'justdev-chris';
+const TEMPLATE_REPO = 'iBuild-Template';
 const PROJECTS_PER_PAGE = 30;
 
 // ─── LOAD PROJECTS ──────────────────────────────────────────────
@@ -20,8 +20,6 @@ async function loadProjects() {
         const res = await githubFetch(
             `https://api.github.com/user/repos?per_page=${PROJECTS_PER_PAGE}&sort=updated&direction=desc`
         );
-
-        if (!res.ok) throw new Error('Failed to fetch repos');
 
         const repos = await res.json();
         const projects = repos.filter(repo => repo.name.startsWith('ibuild-'));
@@ -74,96 +72,75 @@ async function createProject(name, description) {
         const repoName = `ibuild-${name}`;
 
         // Check if repo already exists
-        const checkRes = await githubFetch(`https://api.github.com/repos/${token.user}/repos/${repoName}`);
-        if (checkRes.status === 200) {
+        const checkRes = await githubFetch(`https://api.github.com/user/repos`);
+        const repos = await checkRes.json();
+        if (repos.some(r => r.name === repoName)) {
             throw new Error(`Repository "${repoName}" already exists`);
         }
 
-        // ─── 1. Create empty repo ──────────────────────────────
+        // Create repo
         const createRes = await githubFetch('https://api.github.com/user/repos', {
             method: 'POST',
             body: JSON.stringify({
                 name: repoName,
                 description: description || 'iOS app built with iBuild Web',
                 private: false,
-                auto_init: false, // We'll push files manually
+                auto_init: false,
             }),
         });
 
-        if (!createRes.ok) {
-            const err = await createRes.json();
-            throw new Error(err.message || 'Failed to create repo');
-        }
-
         const repo = await createRes.json();
 
-        // ─── 2. Get template files ─────────────────────────────
+        // Get template files
         modalStatus.textContent = '⏳ Copying template...';
-
-        // Fetch template repo contents
         const templateFiles = await getTemplateContents();
 
-        // ─── 3. Push files to new repo ─────────────────────────
+        // Push files to new repo
         modalStatus.textContent = '⏳ Pushing files...';
-
         const owner = repo.owner.login;
         const defaultBranch = repo.default_branch || 'main';
 
-        // Get the SHA of the default branch (needed for commits)
+        // Get base SHA
         const refRes = await githubFetch(
             `https://api.github.com/repos/${owner}/${repoName}/git/ref/heads/${defaultBranch}`
         );
         const refData = await refRes.json();
         const baseSha = refData.object.sha;
 
-        // Create blobs for each file
+        // Create blobs
         const blobs = [];
         for (const file of templateFiles) {
-            // Replace placeholder in main.swift with project name
             let content = file.content;
             if (file.path === 'Sources/main.swift') {
                 content = content.replace(/\$\{PROJECT_NAME\}/g, name);
             }
-
             const encoded = btoa(unescape(encodeURIComponent(content)));
 
             const blobRes = await githubFetch(
                 `https://api.github.com/repos/${owner}/${repoName}/git/blobs`,
                 {
                     method: 'POST',
-                    body: JSON.stringify({
-                        content: encoded,
-                        encoding: 'base64',
-                    }),
+                    body: JSON.stringify({ content: encoded, encoding: 'base64' }),
                 }
             );
             const blobData = await blobRes.json();
-            blobs.push({
-                path: file.path,
-                sha: blobData.sha,
-                mode: '100644', // Regular file
-            });
+            blobs.push({ path: file.path, sha: blobData.sha, mode: '100644' });
         }
 
-        // Create a tree
+        // Create tree
         const treeRes = await githubFetch(
             `https://api.github.com/repos/${owner}/${repoName}/git/trees`,
             {
                 method: 'POST',
                 body: JSON.stringify({
                     base_tree: baseSha,
-                    tree: blobs.map(b => ({
-                        path: b.path,
-                        mode: b.mode,
-                        type: 'blob',
-                        sha: b.sha,
-                    })),
+                    tree: blobs.map(b => ({ path: b.path, mode: b.mode, type: 'blob', sha: b.sha })),
                 }),
             }
         );
         const treeData = await treeRes.json();
 
-        // Create a commit
+        // Create commit
         const commitRes = await githubFetch(
             `https://api.github.com/repos/${owner}/${repoName}/git/commits`,
             {
@@ -177,15 +154,12 @@ async function createProject(name, description) {
         );
         const commitData = await commitRes.json();
 
-        // Update the reference (branch) to point to the new commit
+        // Update branch
         await githubFetch(
             `https://api.github.com/repos/${owner}/${repoName}/git/refs/heads/${defaultBranch}`,
             {
                 method: 'PATCH',
-                body: JSON.stringify({
-                    sha: commitData.sha,
-                    force: false,
-                }),
+                body: JSON.stringify({ sha: commitData.sha, force: false }),
             }
         );
 
@@ -217,18 +191,14 @@ async function getTemplateContents() {
     ];
 
     const contents = [];
-
     for (const path of files) {
         const res = await fetch(
             `https://raw.githubusercontent.com/${TEMPLATE_OWNER}/${TEMPLATE_REPO}/main/${path}`
         );
-        if (!res.ok) {
-            throw new Error(`Failed to fetch template file: ${path}`);
-        }
+        if (!res.ok) throw new Error(`Failed to fetch template file: ${path}`);
         const content = await res.text();
         contents.push({ path, content });
     }
-
     return contents;
 }
 
@@ -240,31 +210,21 @@ function openProject(repoName) {
 // ─── BUILD PROJECT ──────────────────────────────────────────────
 async function buildProject(repoName) {
     const token = getGitHubToken();
-    if (!token) {
-        showToast('❌ Please login first', true);
-        return;
-    }
-
-    const owner = token.user || 'user';
+    if (!token) { showToast('❌ Please login first', true); return; }
 
     try {
-        showToast('🔨 Triggering build...');
+        const user = await (await githubFetch('https://api.github.com/user')).json();
+        const owner = user.login;
 
-        const res = await githubFetch(
+        showToast('🔨 Triggering build...');
+        await githubFetch(
             `https://api.github.com/repos/${owner}/${repoName}/actions/workflows/build.yml/dispatches`,
             {
                 method: 'POST',
                 body: JSON.stringify({ ref: 'main' }),
             }
         );
-
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.message || 'Failed to trigger build');
-        }
-
         showToast('✅ Build triggered! Check your repo Actions tab.');
-
     } catch (err) {
         console.error('Build error:', err);
         showToast(`❌ ${err.message}`, true);
@@ -274,22 +234,16 @@ async function buildProject(repoName) {
 // ─── DOWNLOAD IPA ──────────────────────────────────────────────
 async function downloadIPA(repoName) {
     const token = getGitHubToken();
-    if (!token) {
-        showToast('❌ Please login first', true);
-        return;
-    }
-
-    const owner = token.user || 'user';
+    if (!token) { showToast('❌ Please login first', true); return; }
 
     try {
-        showToast('📦 Fetching latest IPA...');
+        const user = await (await githubFetch('https://api.github.com/user')).json();
+        const owner = user.login;
 
+        showToast('📦 Fetching latest IPA...');
         const res = await githubFetch(
             `https://api.github.com/repos/${owner}/${repoName}/actions/artifacts`
         );
-
-        if (!res.ok) throw new Error('Failed to fetch artifacts');
-
         const data = await res.json();
 
         if (!data.artifacts || data.artifacts.length === 0) {
@@ -298,9 +252,9 @@ async function downloadIPA(repoName) {
         }
 
         const artifact = data.artifacts[0];
-        const downloadRes = await githubFetch(artifact.archive_download_url);
-
-        if (!downloadRes.ok) throw new Error('Failed to download artifact');
+        const downloadRes = await fetch(artifact.archive_download_url, {
+            headers: { 'Authorization': `token ${token}` }
+        });
 
         const blob = await downloadRes.blob();
         const url = URL.createObjectURL(blob);
@@ -313,7 +267,6 @@ async function downloadIPA(repoName) {
         URL.revokeObjectURL(url);
 
         showToast('✅ Download started!');
-
     } catch (err) {
         console.error('Download error:', err);
         showToast(`❌ ${err.message}`, true);
@@ -323,31 +276,20 @@ async function downloadIPA(repoName) {
 // ─── DELETE PROJECT ────────────────────────────────────────────
 async function deleteProject(repoName) {
     const token = getGitHubToken();
-    if (!token) {
-        showToast('❌ Please login first', true);
-        return;
-    }
+    if (!token) { showToast('❌ Please login first', true); return; }
 
-    const owner = token.user || 'user';
-
-    if (!confirm(`Delete "${repoName}" and all its files? This cannot be undone.`)) {
-        return;
-    }
+    if (!confirm(`Delete "${repoName}" and all its files? This cannot be undone.`)) return;
 
     try {
-        const res = await githubFetch(
+        const user = await (await githubFetch('https://api.github.com/user')).json();
+        const owner = user.login;
+
+        await githubFetch(
             `https://api.github.com/repos/${owner}/${repoName}`,
             { method: 'DELETE' }
         );
-
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.message || 'Failed to delete repo');
-        }
-
         showToast('✅ Project deleted');
         loadProjects();
-
     } catch (err) {
         console.error('Delete error:', err);
         showToast(`❌ ${err.message}`, true);
@@ -356,6 +298,7 @@ async function deleteProject(repoName) {
 
 // ─── EVENT BINDING ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+    // New Project button
     document.getElementById('newProjectBtn').addEventListener('click', () => {
         document.getElementById('newProjectModal').style.display = 'flex';
         document.getElementById('modalStatus').textContent = '';
