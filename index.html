@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>iBld · iBuild Web</title>
+    <link rel="icon" href="assets/icons/ibld-logo.png" type="image/png" />
+    <link rel="stylesheet" href="src/css/style.css" />
+</head>
+<body>
+    <!-- ─── HEADER ─────────────────────────────────────────────── -->
+    <header>
+        <div class="logo-area">
+            <img src="assets/icons/ibld-logo.png" alt="iBld Logo" class="logo-icon" />
+            <span class="logo-text">iBuild <span class="light">Web</span></span>
+        </div>
+        <div class="header-actions">
+            <span id="userDisplay" class="user-badge" style="display:none;"></span>
+            <button id="loginBtn" class="btn-primary">Login with GitHub</button>
+            <button id="logoutBtn" class="btn-secondary" style="display:none;">Logout</button>
+        </div>
+    </header>
+
+    <!-- ─── MAIN ────────────────────────────────────────────────── -->
+    <main>
+        <!-- Login prompt (shown when not logged in) -->
+        <section id="loginPrompt" class="login-prompt">
+            <h2>Build iOS apps. No Mac required.</h2>
+            <p>Sign in with GitHub to manage your iBuild projects.</p>
+            <button id="loginBtnMain" class="btn-primary btn-large">Login with GitHub</button>
+        </section>
+
+        <!-- Dashboard (shown when logged in) -->
+        <section id="dashboard" style="display:none;">
+            <div class="dashboard-header">
+                <h2>Your Projects</h2>
+                <button id="newProjectBtn" class="btn-primary">+ New Project</button>
+            </div>
+
+            <!-- Project list -->
+            <div id="projectList" class="project-list">
+                <p class="loading-text">Loading projects...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ─── NEW PROJECT MODAL ──────────────────────────────────── -->
+    <div id="newProjectModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="modal-close" id="modalClose">&times;</span>
+            <h3>New Project</h3>
+            <form id="newProjectForm">
+                <label for="projectName">Project Name</label>
+                <input type="text" id="projectName" placeholder="MyApp" required />
+                <label for="projectDescription">Description (optional)</label>
+                <input type="text" id="projectDescription" placeholder="A simple iOS app" />
+                <button type="submit" class="btn-primary">Create Project</button>
+            </form>
+            <div id="modalStatus" class="modal-status"></div>
+        </div>
+    </div>
+
+    <!-- ─── DEVICE FLOW MODAL ──────────────────────────────────── -->
+    <div id="deviceFlowModal" class="modal" style="display:none;">
+        <div class="modal-content device-flow">
+            <h3>🔐 GitHub Login</h3>
+            <p>1. Visit <strong id="verificationUri">github.com/login/device</strong></p>
+            <p>2. Enter this code: <strong id="userCode">----</strong></p>
+            <p>3. Authorize iBuild Web</p>
+            <div id="deviceStatus">Waiting for authorization...</div>
+            <button id="cancelDeviceFlow" class="btn-secondary">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ─── FOOTER ────────────────────────────────────────────────── -->
+    <footer>
+        <p>🐱 iBuild Web &bull; Built by <a href="https://catsdevs.online" target="_blank">justdev-chris</a></p>
+    </footer>
+
+    <!-- ─── SCRIPTS ────────────────────────────────────────────── -->
+    <script src="src/js/github.js"></script>
+    <script src="src/js/projects.js"></script>
+    <script src="src/js/app.js"></script>
+</body>
+</html>
