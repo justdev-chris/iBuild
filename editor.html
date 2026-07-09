@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>iBld · Editor</title>
-    <link rel="icon" href="assets/icons/ibld-logo.png" type="image/png" />
+    <title>iBuild Web · Editor</title>
+    <link rel="icon" href="assets/icons/ibld-logo.PNG" type="image/png" />
     <link rel="stylesheet" href="src/css/style.css" />
     <style>
         .editor-layout {
@@ -189,7 +189,7 @@
 <body>
     <header>
         <div class="logo-area">
-            <img src="assets/icons/ibld-logo.png" alt="iBld Logo" class="logo-icon" />
+            <img src="assets/icons/ibld-logo.PNG" alt="iBuild Logo" class="logo-icon" />
             <span class="logo-text">iBuild <span class="light">Web</span></span>
         </div>
         <div class="header-actions">
@@ -279,6 +279,18 @@
         </div>
     </div>
 
+    <!-- ─── VCONSOLE (Mobile debug) ────────────────────────────── -->
+    <script src="https://unpkg.com/vconsole@latest/dist/vconsole.min.js"></script>
+    <script>
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
+        const hasDebugParam = new URLSearchParams(window.location.search).has('debug');
+        if (isMobile || hasDebugParam) {
+            const vConsole = new VConsole();
+            console.log('🐱 iBuild Web — vConsole enabled');
+        }
+    </script>
+
+    <!-- ─── SCRIPTS ────────────────────────────────────────────── -->
     <script src="src/js/monaco-loader.js"></script>
     <script src="src/js/build.js"></script>
     <script src="src/js/editor.js"></script>
