@@ -1,0 +1,384 @@
+/* ─── RESET & BASE ─────────────────────────────────────────── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0d0d0d;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a {
+    color: #00ccff;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* ─── HEADER ────────────────────────────────────────────────── */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    border-bottom: 1px solid #2a2a2a;
+    background: #111;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    height: 36px;
+    width: auto;
+}
+
+.logo-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+}
+.logo-text .light {
+    color: #888;
+    font-weight: 400;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-badge {
+    color: #888;
+    font-size: 14px;
+    background: #1a1a1a;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #2a2a2a;
+}
+
+/* ─── BUTTONS ────────────────────────────────────────────────── */
+.btn-primary {
+    background: #00ccff;
+    color: #000;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+.btn-primary:hover {
+    background: #00ddff;
+    transform: scale(1.02);
+}
+
+.btn-secondary {
+    background: #1a1a1a;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+.btn-secondary:hover {
+    border-color: #00ccff;
+    color: #fff;
+}
+
+.btn-large {
+    padding: 14px 40px;
+    font-size: 18px;
+}
+
+.btn-danger {
+    background: #cc3333;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+.btn-danger:hover {
+    background: #dd4444;
+}
+
+/* ─── MAIN ──────────────────────────────────────────────────── */
+main {
+    flex: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    width: 100%;
+}
+
+/* ─── LOGIN PROMPT ──────────────────────────────────────────── */
+.login-prompt {
+    text-align: center;
+    padding: 80px 20px;
+}
+.login-prompt h2 {
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+.login-prompt p {
+    color: #888;
+    font-size: 18px;
+    margin-bottom: 32px;
+}
+
+/* ─── DASHBOARD ─────────────────────────────────────────────── */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.dashboard-header h2 {
+    font-size: 26px;
+    font-weight: 600;
+}
+
+/* ─── PROJECT LIST ──────────────────────────────────────────── */
+.project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.project-item {
+    background: #161616;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 18px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    transition: 0.15s;
+}
+.project-item:hover {
+    border-color: #00ccff;
+    background: #1a1a1a;
+}
+
+.project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 150px;
+}
+.project-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+}
+.project-name .repo-badge {
+    font-size: 11px;
+    background: #1f1f1f;
+    color: #666;
+    padding: 2px 10px;
+    border-radius: 12px;
+    border: 1px solid #2a2a2a;
+    font-weight: 400;
+    margin-left: 10px;
+}
+.project-desc {
+    color: #888;
+    font-size: 14px;
+}
+.project-meta {
+    color: #555;
+    font-size: 12px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.project-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+.project-actions .btn-secondary {
+    padding: 4px 14px;
+    font-size: 12px;
+}
+
+/* ─── MODAL ──────────────────────────────────────────────────── */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    max-width: 480px;
+    width: 100%;
+    padding: 32px;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 12px;
+    right: 18px;
+    font-size: 28px;
+    color: #666;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+.modal-close:hover {
+    color: #fff;
+}
+
+.modal h3 {
+    font-size: 22px;
+    margin-bottom: 16px;
+}
+
+.modal label {
+    display: block;
+    color: #aaa;
+    font-size: 14px;
+    margin-top: 12px;
+    margin-bottom: 4px;
+}
+.modal input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    background: #0d0d0d;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+}
+.modal input[type="text"]:focus {
+    border-color: #00ccff;
+}
+
+.modal-status {
+    margin-top: 16px;
+    color: #888;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* ─── DEVICE FLOW MODAL ────────────────────────────────────── */
+.device-flow {
+    text-align: center;
+}
+.device-flow h3 {
+    font-size: 22px;
+}
+.device-flow p {
+    color: #aaa;
+    margin: 10px 0;
+}
+.device-flow #userCode {
+    font-size: 32px;
+    font-weight: 700;
+    color: #00ccff;
+    background: #0d0d0d;
+    padding: 8px 24px;
+    border-radius: 8px;
+    border: 1px solid #2a2a2a;
+    display: inline-block;
+    letter-spacing: 4px;
+}
+.device-flow #deviceStatus {
+    color: #888;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.device-flow .btn-secondary {
+    margin-top: 8px;
+}
+
+/* ─── LOADING / EMPTY ──────────────────────────────────────── */
+.loading-text {
+    color: #555;
+    text-align: center;
+    padding: 40px 0;
+}
+.empty-text {
+    color: #555;
+    text-align: center;
+    padding: 40px 0;
+}
+
+/* ─── FOOTER ────────────────────────────────────────────────── */
+footer {
+    text-align: center;
+    padding: 20px;
+    border-top: 1px solid #1a1a1a;
+    color: #444;
+    font-size: 13px;
+}
+footer a {
+    color: #666;
+}
+footer a:hover {
+    color: #00ccff;
+}
+
+/* ─── RESPONSIVE ────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    header {
+        padding: 12px 16px;
+    }
+    .logo-text {
+        font-size: 18px;
+    }
+    .login-prompt h2 {
+        font-size: 26px;
+    }
+    .project-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .project-actions {
+        justify-content: flex-start;
+    }
+    .modal-content {
+        padding: 24px;
+    }
+}
