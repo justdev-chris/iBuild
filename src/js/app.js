@@ -41,62 +41,6 @@ function showLoginPrompt() {
     if (userDisplay) userDisplay.style.display = 'none';
 }
 
-// ─── DEVICE FLOW MODAL ──────────────────────────────────────────
-function showDeviceFlowModal(userCode, verificationUri) {
-    const userCodeEl = document.getElementById('userCode');
-    const verificationUriEl = document.getElementById('verificationUri');
-    const deviceStatus = document.getElementById('deviceStatus');
-    const modal = document.getElementById('deviceFlowModal');
-
-    if (userCodeEl) userCodeEl.textContent = userCode;
-    if (verificationUriEl) {
-        verificationUriEl.textContent = verificationUri;
-        verificationUriEl.href = verificationUri;
-    }
-    if (deviceStatus) deviceStatus.textContent = '⏳ Waiting for authorization...';
-    if (modal) modal.style.display = 'flex';
-}
-
-function closeDeviceFlowModal() {
-    const modal = document.getElementById('deviceFlowModal');
-    if (modal) modal.style.display = 'none';
-}
-
-function updateDeviceStatus(msg) {
-    const deviceStatus = document.getElementById('deviceStatus');
-    if (deviceStatus) deviceStatus.textContent = msg;
-}
-
-// ─── LOGIN / LOGOUT (wrapped to avoid undefined errors) ──────
-function loginWithGitHub() {
-    if (typeof window._loginWithGitHub === 'function') {
-        window._loginWithGitHub();
-    } else if (typeof loginWithGitHubDeviceFlow === 'function') {
-        loginWithGitHubDeviceFlow();
-    } else {
-        console.error('loginWithGitHub not loaded');
-        showToast('❌ GitHub module not loaded', true);
-    }
-}
-
-function logout() {
-    if (typeof window._logout === 'function') {
-        window._logout();
-    } else {
-        localStorage.removeItem('github_token');
-        showLoginPrompt();
-        showToast('👋 Logged out');
-    }
-}
-
-function cancelDeviceFlow() {
-    if (typeof window._cancelDeviceFlow === 'function') {
-        window._cancelDeviceFlow();
-    } else {
-        closeDeviceFlowModal();
-    }
-}
-
 // ─── LOAD USER INFO ──────────────────────────────────────────
 async function loadUserInfo() {
     try {
@@ -141,18 +85,51 @@ async function loadUserInfo() {
     }
 }
 
+// ─── LOGIN / LOGOUT WRAPPERS ──────────────────────────────────
+function loginWithGitHub() {
+    if (typeof window._loginWithGitHub === 'function') {
+        window._loginWithGitHub();
+    } else {
+        console.error('loginWithGitHub not loaded');
+        showToast('❌ GitHub module not loaded', true);
+    }
+}
+
+function logout() {
+    if (typeof window._logout === 'function') {
+        window._logout();
+    } else {
+        localStorage.removeItem('github_token');
+        showLoginPrompt();
+        showToast('👋 Logged out');
+    }
+}
+
 // ─── EXPOSE FUNCTIONS GLOBALLY ──────────────────────────────
 window.showDashboard = showDashboard;
 window.showLoginPrompt = showLoginPrompt;
 window.loadUserInfo = loadUserInfo;
-window.showDeviceFlowModal = showDeviceFlowModal;
-window.closeDeviceFlowModal = closeDeviceFlowModal;
-window.updateDeviceStatus = updateDeviceStatus;
 window.loginWithGitHub = loginWithGitHub;
 window.logout = logout;
-window.cancelDeviceFlow = cancelDeviceFlow;
 window.currentToken = currentToken;
 window.currentUser = currentUser;
+
+// ─── ON LOGIN SUCCESS HANDLER ──────────────────────────────────
+window.onLoginSuccess = function(user) {
+    console.log('✅ onLoginSuccess called with user:', user);
+    currentUser = user;
+    showDashboard(user);
+    if (typeof loadProjects === 'function') {
+        loadProjects();
+    }
+};
+
+window.onLogout = function() {
+    console.log('👋 onLogout called');
+    currentUser = null;
+    currentToken = null;
+    showLoginPrompt();
+};
 
 // ─── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
@@ -169,7 +146,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginBtn = document.getElementById('loginBtn');
     const loginBtnMain = document.getElementById('loginBtnMain');
     const logoutBtn = document.getElementById('logoutBtn');
-    const cancelBtn = document.getElementById('cancelDeviceFlow');
     const newProjectBtn = document.getElementById('newProjectBtn');
     const modalClose = document.getElementById('modalClose');
     const newProjectForm = document.getElementById('newProjectForm');
@@ -177,17 +153,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (loginBtn) loginBtn.addEventListener('click', loginWithGitHub);
     if (loginBtnMain) loginBtnMain.addEventListener('click', loginWithGitHub);
     if (logoutBtn) logoutBtn.addEventListener('click', logout);
-    if (cancelBtn) cancelBtn.addEventListener('click', cancelDeviceFlow);
 
-    const deviceModal = document.getElementById('deviceFlowModal');
-    if (deviceModal) {
-        deviceModal.addEventListener('click', function(e) {
-            if (e.target === e.currentTarget) {
-                cancelDeviceFlow();
-            }
-        });
-    }
-
+    // New Project
     if (newProjectBtn) {
         newProjectBtn.addEventListener('click', function() {
             const modal = document.getElementById('newProjectModal');
