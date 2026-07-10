@@ -69,45 +69,69 @@ async function createProject(name, description) {
         const token = getGitHubToken();
         if (!token) throw new Error('Not logged in');
 
+        const user = await (await githubFetch('https://api.github.com/user')).json();
         const repoName = `ibuild-${name}`;
 
         // Check if repo already exists
-        const checkRes = await githubFetch(`https://api.github.com/user/repos`);
-        const repos = await checkRes.json();
-        if (repos.some(r => r.name === repoName)) {
-            throw new Error(`Repository "${repoName}" already exists`);
+        const checkRes = await githubFetch(`https://api.github.com/repos/${user.login}/${repoName}`);
+        if (checkRes.status === 200) {
+            throw new Error(`Project "${name}" already exists. Please choose a different name.`);
         }
 
-        // Create repo
+        // ─── CREATE REPO WITH AUTO_INIT ──────────────────────────
+        modalStatus.textContent = '⏳ Creating repository...';
         const createRes = await githubFetch('https://api.github.com/user/repos', {
             method: 'POST',
             body: JSON.stringify({
                 name: repoName,
                 description: description || 'iOS app built with iBuild Web',
                 private: false,
-                auto_init: false,
+                auto_init: true,
             }),
         });
 
         const repo = await createRes.json();
+        const defaultBranch = repo.default_branch || 'main';
 
-        // Get template files
+        // ─── DELETE README.MD ──────────────────────────────────────
+        modalStatus.textContent = '⏳ Removing README...';
+        try {
+            const readmeRes = await githubFetch(
+                `https://api.github.com/repos/${user.login}/${repoName}/contents/README.md`,
+                { headers: { 'Accept': 'application/vnd.github.v3+json' } }
+            );
+            if (readmeRes.ok) {
+                const readmeData = await readmeRes.json();
+                await githubFetch(
+                    `https://api.github.com/repos/${user.login}/${repoName}/contents/README.md`,
+                    {
+                        method: 'DELETE',
+                        body: JSON.stringify({
+                            message: 'Remove README for template',
+                            sha: readmeData.sha,
+                            branch: defaultBranch,
+                        }),
+                    }
+                );
+            }
+        } catch (e) {
+            // README might not exist, ignore
+            console.log('README deletion skipped:', e.message);
+        }
+
+        // ─── GET TEMPLATE FILES ──────────────────────────────────
         modalStatus.textContent = '⏳ Copying template...';
         const templateFiles = await getTemplateContents();
 
-        // Push files to new repo
+        // ─── GET BASE SHA ──────────────────────────────────────────
         modalStatus.textContent = '⏳ Pushing files...';
-        const owner = repo.owner.login;
-        const defaultBranch = repo.default_branch || 'main';
-
-        // Get base SHA
         const refRes = await githubFetch(
-            `https://api.github.com/repos/${owner}/${repoName}/git/ref/heads/${defaultBranch}`
+            `https://api.github.com/repos/${user.login}/${repoName}/git/ref/heads/${defaultBranch}`
         );
         const refData = await refRes.json();
         const baseSha = refData.object.sha;
 
-        // Create blobs
+        // ─── CREATE BLOBS ──────────────────────────────────────────
         const blobs = [];
         for (const file of templateFiles) {
             let content = file.content;
@@ -117,7 +141,7 @@ async function createProject(name, description) {
             const encoded = btoa(unescape(encodeURIComponent(content)));
 
             const blobRes = await githubFetch(
-                `https://api.github.com/repos/${owner}/${repoName}/git/blobs`,
+                `https://api.github.com/repos/${user.login}/${repoName}/git/blobs`,
                 {
                     method: 'POST',
                     body: JSON.stringify({ content: encoded, encoding: 'base64' }),
@@ -127,9 +151,9 @@ async function createProject(name, description) {
             blobs.push({ path: file.path, sha: blobData.sha, mode: '100644' });
         }
 
-        // Create tree
+        // ─── CREATE TREE ────────────────────────────────────────────
         const treeRes = await githubFetch(
-            `https://api.github.com/repos/${owner}/${repoName}/git/trees`,
+            `https://api.github.com/repos/${user.login}/${repoName}/git/trees`,
             {
                 method: 'POST',
                 body: JSON.stringify({
@@ -140,9 +164,9 @@ async function createProject(name, description) {
         );
         const treeData = await treeRes.json();
 
-        // Create commit
+        // ─── CREATE COMMIT ──────────────────────────────────────────
         const commitRes = await githubFetch(
-            `https://api.github.com/repos/${owner}/${repoName}/git/commits`,
+            `https://api.github.com/repos/${user.login}/${repoName}/git/commits`,
             {
                 method: 'POST',
                 body: JSON.stringify({
@@ -154,9 +178,9 @@ async function createProject(name, description) {
         );
         const commitData = await commitRes.json();
 
-        // Update branch
+        // ─── UPDATE BRANCH ──────────────────────────────────────────
         await githubFetch(
-            `https://api.github.com/repos/${owner}/${repoName}/git/refs/heads/${defaultBranch}`,
+            `https://api.github.com/repos/${user.login}/${repoName}/git/refs/heads/${defaultBranch}`,
             {
                 method: 'PATCH',
                 body: JSON.stringify({ sha: commitData.sha, force: false }),
@@ -298,7 +322,6 @@ async function deleteProject(repoName) {
 
 // ─── EVENT BINDING ──────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    // New Project button
     document.getElementById('newProjectBtn').addEventListener('click', () => {
         document.getElementById('newProjectModal').style.display = 'flex';
         document.getElementById('modalStatus').textContent = '';
